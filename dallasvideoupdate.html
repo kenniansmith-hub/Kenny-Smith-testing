@@ -2867,12 +2867,9 @@ function initApp() {
   // updateAllItineraryButtons now handled by itinerary-controller.js module
 }
 
-// Re-run empty state check after gallery photos are added
-var _origAddGallery = window.addGalleryPhotos;
-window.addGalleryPhotos = function(input) {
-  if (_origAddGallery) _origAddGallery(input);
-  setTimeout(updateGalleryEmptyState, 200);
-};
+// Gallery empty state will be updated automatically by loadGalleryFromSupabase
+// No need to wrap addGalleryPhotos anymore since Supabase handles state
+
 
 if (document.readyState === 'complete') {
   initApp();

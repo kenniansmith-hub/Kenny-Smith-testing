@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="css/components.css">
 
 <!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
   :root {
@@ -1878,17 +1878,34 @@ var authMode = 'signin';
 const SUPABASE_URL = 'https://pomynwxyorhqrqunrryz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbXlud3h5b3JocXJxdW5ycnl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODAwNzQsImV4cCI6MjA5NTA1NjA3NH0.q6nWAndb7rBBVCSqWhixRamZnfTXqlo9YZ9r1kQLYG8';
 
-// Wait for Supabase library to load, then initialize
-if (typeof supabase !== 'undefined') {
-  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-} else {
-  window.addEventListener('load', function() {
-    if (typeof supabase !== 'undefined') {
+// Initialize Supabase - try multiple times to ensure it loads
+function initSupabase() {
+  if (typeof supabase !== 'undefined' && !supabaseClient) {
+    try {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      loadGalleryFromSupabase();
+      console.log('✅ Supabase initialized');
+      return true;
+    } catch (e) {
+      console.error('Supabase init error:', e);
     }
-  });
+  }
+  return false;
 }
+
+// Try to initialize immediately
+initSupabase();
+
+// Also try when DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+  initSupabase();
+});
+
+// And try when window loads
+window.addEventListener('load', function() {
+  if (initSupabase()) {
+    loadGalleryFromSupabase();
+  }
+});
 
 // Wait for Supabase library to load
 // ═══════════════════════════════════════════════════════════════════
@@ -2008,16 +2025,27 @@ function changeCardCover(input, tripId) {
 async function addGalleryPhotos(input) {
   if (!input.files || input.files.length === 0) return;
   
-  showToast('Uploading photos...', 'info');
-  
-  for (let i = 0; i < input.files.length; i++) {
-    const file = input.files[i];
-    await uploadPhotoToSupabase(file);
+  // Ensure Supabase is initialized
+  if (!initSupabase()) {
+    showToast('Supabase not loaded yet. Please wait and try again.', 'error');
+    return;
   }
   
-  input.value = '';
-  await loadGalleryFromSupabase();
-  showToast('Photos uploaded successfully! ✓');
+  showToast('Uploading photos...', 'info');
+  
+  try {
+    for (let i = 0; i < input.files.length; i++) {
+      const file = input.files[i];
+      await uploadPhotoToSupabase(file);
+    }
+    
+    input.value = '';
+    await loadGalleryFromSupabase();
+    showToast('Photos uploaded successfully! ✓');
+  } catch (err) {
+    console.error('Upload error:', err);
+    showToast('Upload failed: ' + err.message, 'error');
+  }
 }
 
 async function uploadPhotoToSupabase(file) {

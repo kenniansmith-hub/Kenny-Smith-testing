@@ -1944,6 +1944,9 @@ function loadAllSavedPhotos() {
       }
     }
     
+    // DISABLED: Gallery now loads from Supabase, not localStorage
+    // This prevents conflicts between local and cloud storage
+    /*
     var galleryContainer = document.getElementById('gallery-grid');
     if (galleryContainer) {
       for (var key in store) {
@@ -1955,6 +1958,7 @@ function loadAllSavedPhotos() {
         }
       }
     }
+    */
   } catch(e) {
     console.error('Load error:', e);
   }
@@ -2446,6 +2450,13 @@ function showPage(id) {
   }
   var dd = document.getElementById('mainDrop');
   if (dd) dd.className = dd.className.replace(' open', '').replace('open', '');
+  
+  // Load gallery from Supabase when showing gallery page
+  if (id === 'gallery') {
+    setTimeout(function() {
+      loadGalleryFromSupabase();
+    }, 100);
+  }
 }
 
 function toggleDrop() {
